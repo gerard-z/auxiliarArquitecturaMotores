@@ -131,6 +131,14 @@ public:
 
 	}
 
+	float getBallRadius() const noexcept {
+		return m_ballRadius;
+	}
+
+	Mona::TransformHandle GetTransform() const noexcept {
+		return m_ballTransform;
+	}
+
 private:
 	Mona::TransformHandle m_transform; // paddle transform
 	Mona::TransformHandle m_ballTransform;
@@ -154,10 +162,6 @@ public:
 		paddleMaterial->SetDiffuseColor(glm::vec3(0.3f, 0.3f, 0.75f));
 		auto& meshManager = Mona::MeshManager::GetInstance();
 		world.AddComponent<Mona::StaticMeshComponent>(*this, meshManager.LoadMesh(Mona::Mesh::PrimitiveType::Cube), paddleMaterial);
-		Mona::BoxShapeInformation boxInfo(paddleScale);
-		Mona::RigidBodyHandle rb = world.AddComponent<Mona::RigidBodyComponent>(*this, boxInfo, Mona::RigidBodyType::KinematicBody);
-		rb->SetFriction(0.0f);
-		rb->SetRestitution(1.0f);
 	}
 
 	virtual void UserUpdate(Mona::World& world, float timeStep) noexcept {
@@ -193,7 +197,70 @@ private:
 	float m_paddleVelocity;
 };
 
+class Block : public Mona::GameObject {
+public:
+	Block(glm::vec3 init_position, glm::vec3 block_scale, std::shared_ptr<Mona::DiffuseFlatMaterial> block_material, Mona::TransformHandle ball_transform, float ball_radius, Mona::GameObjectHandle<Ball> ball) :
+		ball_transform(ball_transform), ball_radius(ball_radius), position(init_position), scale(block_scale), material(block_material), ball(ball) {}
+	~Block() = default;
+	virtual void UserStartUp(Mona::World& world) noexcept {
+		auto& audioClipManager = Mona::AudioClipManager::GetInstance();
+		m_blockBreakingSound = audioClipManager.LoadAudioClip(Mona::SourceDirectoryData::SourcePath("Assets/AudioFiles/boxBreaking.wav"));
+		auto& meshManager = Mona::MeshManager::GetInstance();
+		auto transform = world.AddComponent<Mona::TransformComponent>(*this, position);
+		transform->Scale(scale);
+		world.AddComponent<Mona::StaticMeshComponent>(*this, meshManager.LoadMesh(Mona::Mesh::PrimitiveType::Cube), material);
+	}
 
+	// Reaccionar a la colisión con la bola
+	void OnCollisionWithBall(Mona::World& world) {
+		world.PlayAudioClip2D(m_blockBreakingSound, 1.0f, 1.0f);
+		world.DestroyGameObject(*this);
+	}
+
+	// Revisa la colisión con el paddle
+	void checkBallCollision(Mona::World& world) {
+		auto ballPos = ball_transform->GetLocalTranslation();
+		// Primero revisamos con un bounding box, si no colisiona con el bounding box no colisiona con el paddle
+		if (ballPos.x + ball_radius < position.x - scale.x || ballPos.x - ball_radius > position.x + scale.x) {
+			return;
+		}
+		if (ballPos.y + ball_radius < position.y - scale.y || ballPos.y - ball_radius > position.y + scale.y) {
+			return;
+		}
+		if (ballPos.z + ball_radius < position.z - scale.z || ballPos.z - ball_radius > position.z + scale.z) { // no debería pasar
+			return;
+		}
+		// Si colisiona con el bounding box, revisamos si el punto más cercano del paddle a la bola está dentro de la bola
+		float closestPoint_x = glm::clamp(ballPos.x, position.x - scale.x, position.x + scale.x);
+		float closestPoint_y = glm::clamp(ballPos.y, position.y - scale.y, position.y + scale.y);
+		float closestPoint_z = glm::clamp(ballPos.z, position.z - scale.z, position.z + scale.z);
+
+		float distance = glm::distance(glm::vec3(closestPoint_x, closestPoint_y, closestPoint_z), glm::vec3(ballPos.x, ballPos.y, ballPos.z));
+
+		if (distance > ball_radius) {
+			return;
+		}
+
+		// Si el punto más cercano está dentro de la bola, entonces la bola colisionó con el paddle
+		glm::vec3 normal = glm::normalize(glm::vec3(ballPos.x - closestPoint_x, ballPos.y - closestPoint_y, ballPos.z - closestPoint_z));
+		ball->OnCollisionBall(world, glm::vec3(closestPoint_x, closestPoint_y, closestPoint_z), normal);
+		OnCollisionWithBall(world);
+	}
+
+	virtual void UserUpdate(Mona::World& world, float timeStep) noexcept {
+		// Colisiones con el paddle
+		checkBallCollision(world);
+	}
+
+private:
+	Mona::GameObjectHandle<Ball> ball;
+	Mona::TransformHandle ball_transform;
+	float ball_radius;
+	glm::vec3 position;
+	glm::vec3 scale;
+	std::shared_ptr<Mona::DiffuseFlatMaterial> material;
+	std::shared_ptr<Mona::AudioClip> m_blockBreakingSound;
+};
 
 class Breakout : public Mona::Application {
 public:
@@ -208,11 +275,6 @@ public:
 		
 
 		//Crear el los bloques destructibles del nivel
-		glm::vec3 blockScale(1.8f, 0.5f, 0.5f);
-		auto& audioClipManager = Mona::AudioClipManager::GetInstance();
-		m_blockBreakingSound = audioClipManager.LoadAudioClip(Mona::SourceDirectoryData::SourcePath("Assets/AudioFiles/boxBreaking.wav"));
-		auto& meshManager = Mona::MeshManager::GetInstance();
-		Mona::BoxShapeInformation boxInfo(blockScale);
 
 		std::shared_ptr<Mona::DiffuseFlatMaterial> materials[5];
 		glm::vec3 colors[5] = { glm::vec3(0.0f,0.0f,1.0f), glm::vec3(0.0f,1.0f,0.0f), glm::vec3(1.0f,1.0f,0.0f), glm::vec3(1.0f,0.0f,0.0f), glm::vec3(1.0f,0.0f,1.0f) };
@@ -227,21 +289,8 @@ public:
 			float x = 4.0f * i;
 			for (int j = -2; j < 3; j++)
 			{
-				float y = 2.0f * j;
-				auto block = world.CreateGameObject<Mona::GameObject>();
-				auto transform = world.AddComponent<Mona::TransformComponent>(block, glm::vec3( x, 15.0f + y, 0.0f));
-				transform->Scale(blockScale);
-				world.AddComponent<Mona::StaticMeshComponent>(block, meshManager.LoadMesh(Mona::Mesh::PrimitiveType::Cube), materials[j+2]);
-				Mona::RigidBodyHandle rb =world.AddComponent<Mona::RigidBodyComponent>(block, boxInfo, Mona::RigidBodyType::StaticBody, 1.0f);
-				rb->SetRestitution(1.0f);
-				rb->SetFriction(0.0f);
-				auto callback = [block, blockSound = m_blockBreakingSound](Mona::World& world, Mona::RigidBodyHandle& otherRigidBody, bool isSwaped, Mona::CollisionInformation& colInfo) mutable {
-					world.PlayAudioClip2D(blockSound, 1.0f, 1.0f);
-					world.DestroyGameObject(block);
-				};
-
-				rb->SetStartCollisionCallback(callback);
-				
+				float y = 2.0f * j + 15.0f;
+				auto block = world.CreateGameObject<Block>(glm::vec3(x, y, 0.0f), glm::vec3(1.8f, 0.5f, 0.5f), materials[j+2], ball->GetTransform(), ball->getBallRadius(), ball);
 			}
 		}
 
