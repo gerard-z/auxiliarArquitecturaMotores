@@ -8,7 +8,7 @@ Block::~Block() = default;
 
 void Block::UserStartUp(Mona::World& world) noexcept {
     auto& audioClipManager = Mona::AudioClipManager::GetInstance();
-    m_blockBreakingSound = audioClipManager.LoadAudioClip(Mona::SourceDirectoryData::SourcePath("Assets/AudioFiles/boxBreaking.wav"));
+    m_blockBreakingSound = audioClipManager.LoadAudioClip(Mona::SourceDirectoryData::SourcePath("audio/boxBreaking.wav"));
     auto& meshManager = Mona::MeshManager::GetInstance();
     auto transform = world.AddComponent<Mona::TransformComponent>(*this, position);
     transform->Scale(scale);

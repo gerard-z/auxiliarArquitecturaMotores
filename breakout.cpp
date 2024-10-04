@@ -11,7 +11,8 @@ void CreateBasicCameraWithMusicAndLight(Mona::World& world)
 	world.SetMainCamera(world.AddComponent<Mona::CameraComponent>(camera));
 	world.SetAudioListenerTransform(transform);
 	auto& audioClipManager = Mona::AudioClipManager::GetInstance();
-	auto audioClipPtr = audioClipManager.LoadAudioClip(Mona::SourceDirectoryData::SourcePath("Assets/AudioFiles/music.wav"));
+	Mona::SourceDirectoryData::SetSourceDirectory("C:/Proyectos/cpp/MonaEngineProject/assets/");
+	auto audioClipPtr = audioClipManager.LoadAudioClip(Mona::SourceDirectoryData::SourcePath("audio/mewmew.wav"));
 	auto audioSource = world.AddComponent<Mona::AudioSourceComponent>(camera, audioClipPtr);
 	audioSource->SetIsLooping(true);
 	audioSource->SetVolume(0.3f);
