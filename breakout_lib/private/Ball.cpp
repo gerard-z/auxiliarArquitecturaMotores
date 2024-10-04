@@ -27,7 +27,7 @@ void Ball::UserStartUp(Mona::World& world) noexcept {
 // Reaccionar a la colisión de la bola
 void Ball::OnCollisionBall(Mona::World& world, glm::vec3 collision_pos, glm::vec3 other_normal) {
     world.PlayAudioClip3D(m_ballBounceSound, m_ballTransform->GetLocalTranslation(), 0.3f);
-    m_ballTransform->SetTranslation(collision_pos + other_normal * m_ballRadius);
+    // m_ballTransform->SetTranslation(collision_pos + other_normal * m_ballRadius);
     m_ballVelocity = glm::reflect(m_ballVelocity, other_normal);
 }
 
@@ -61,10 +61,10 @@ void Ball::checkPaddleCollision(Mona::World& world, Mona::TransformHandle paddle
         return;
     }
 
-    // Si el punto más cercano está dentro de la bola, entonces la bola colisionó con el paddle
-    time_since_last_collision = 0.0f;
-    glm::vec3 normal = glm::normalize(glm::vec3(ballPos.x - closestPoint_x, ballPos.y - closestPoint_y, ballPos.z - closestPoint_z));
-    OnCollisionBall(world, glm::vec3(closestPoint_x, closestPoint_y, closestPoint_z), normal);
+    // Si el punto más cercano está dentro de la bola, entonces la bola colisionó con el paddle, rebotar con dirección según la posición de la colisión
+    time_since_last_collision = 0.0f; // Reiniciar el tiempo desde la última colisión
+    glm::vec3 new_direction = glm::normalize(glm::vec3((closestPoint_x - paddlePos.x)*5, -m_ballVelocity.y, 0.0f));
+    m_ballVelocity = new_direction * 15.0f;
 }
 	
 
@@ -73,7 +73,7 @@ void Ball::UserUpdate(Mona::World& world, float timeStep) noexcept {
 
     // Lanzar la bola para empezar el juego
     if (input.IsMouseButtonPressed(MONA_MOUSE_BUTTON_1) && m_ballVelocity == glm::vec3(0.0f, 0.0f, 0.0f)) {
-        m_ballVelocity = glm::vec3(2.0f, 14.0f, 0.0f);
+        m_ballVelocity = glm::vec3(0.0f, 15.0f, 0.0f);
         
     }
 
