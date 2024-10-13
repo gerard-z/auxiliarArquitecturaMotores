@@ -46,7 +46,20 @@ void Block::checkBallCollision(Mona::World& world) {
     }
 
     // Si el punto más cercano está dentro de la bola, entonces la bola colisionó con el paddle
-    glm::vec3 normal = glm::normalize(glm::vec3(ballPos.x - closestPoint_x, ballPos.y - closestPoint_y, ballPos.z - closestPoint_z));
+    // Rebotar con dirección según la posición de la colisión
+    glm::vec3 normal;
+    if (closestPoint_x == position.x - scale.x) {
+        normal = glm::vec3(-1.0f, 0.0f, 0.0f);
+    }
+    else if (closestPoint_x == position.x + scale.x) {
+        normal = glm::vec3(1.0f, 0.0f, 0.0f);
+    }
+    else if (closestPoint_y == position.y - scale.y) {
+        normal = glm::vec3(0.0f, -1.0f, 0.0f);
+    }
+    else if (closestPoint_y == position.y + scale.y) {
+        normal = glm::vec3(0.0f, 1.0f, 0.0f);
+    }
     ball->OnCollisionBall(world, glm::vec3(closestPoint_x, closestPoint_y, closestPoint_z), normal);
     OnCollisionWithBall(world);
 }

@@ -61,8 +61,9 @@ void Ball::checkPaddleCollision(Mona::World& world, Mona::TransformHandle paddle
 void Ball::UserUpdate(Mona::World& world, float timeStep) noexcept {
     auto& input = world.GetInput();
     // Lanzar la bola para empezar el juego
-    if (input.IsMouseButtonPressed(MONA_MOUSE_BUTTON_1) && m_ballVelocity == glm::vec3(0.0f, 0.0f, 0.0f)) {
-        m_ballVelocity = glm::vec3(0.0f, 15.0f, 0.0f);
+    if (input.IsMouseButtonPressed(MONA_MOUSE_BUTTON_1) || input.IsGamepadButtonPressed(MONA_JOYSTICK_1, MONA_GAMEPAD_BUTTON_A)) {
+        if (m_ballVelocity == glm::vec3(0.0f, 0.0f, 0.0f))
+            m_ballVelocity = glm::vec3(0.0f, 15.0f, 0.0f);
     }
     // Actualizar la posición de la bola
     m_ballTransform->SetTranslation(m_ballTransform->GetLocalTranslation() + m_ballVelocity * timeStep);
@@ -72,11 +73,11 @@ void Ball::UserUpdate(Mona::World& world, float timeStep) noexcept {
         time_since_last_collision += timeStep;
     }
     // Colisiones con las paredes
-    if (m_ballTransform->GetLocalTranslation().x < -17.0f) {
-        OnCollisionBall(world, glm::vec3(-17.0f, m_ballTransform->GetLocalTranslation().y, m_ballTransform->GetLocalTranslation().z), glm::vec3(1.0f, 0.0f, 0.0f));
+    if (m_ballTransform->GetLocalTranslation().x < -18.0f) {
+        OnCollisionBall(world, glm::vec3(-18.0f, m_ballTransform->GetLocalTranslation().y, m_ballTransform->GetLocalTranslation().z), glm::vec3(1.0f, 0.0f, 0.0f));
     }
-    else if (m_ballTransform->GetLocalTranslation().x > 17.0f) {
-        OnCollisionBall(world, glm::vec3(17.0f, m_ballTransform->GetLocalTranslation().y, m_ballTransform->GetLocalTranslation().z), glm::vec3(-1.0f, 0.0f, 0.0f));
+    else if (m_ballTransform->GetLocalTranslation().x > 18.0f) {
+        OnCollisionBall(world, glm::vec3(18.0f, m_ballTransform->GetLocalTranslation().y, m_ballTransform->GetLocalTranslation().z), glm::vec3(-1.0f, 0.0f, 0.0f));
     }
     else if (m_ballTransform->GetLocalTranslation().y < -4.0f) {
         OnCollisionBall(world, glm::vec3(m_ballTransform->GetLocalTranslation().x, -4.0f, m_ballTransform->GetLocalTranslation().z), glm::vec3(0.0f, 1.0f, 0.0f));

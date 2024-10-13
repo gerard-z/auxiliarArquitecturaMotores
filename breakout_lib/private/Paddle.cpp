@@ -15,16 +15,20 @@ void Paddle::UserStartUp(Mona::World& world) noexcept {
 
 void Paddle::UserUpdate(Mona::World& world, float timeStep) noexcept {
     auto& input = world.GetInput();
-    if (input.IsKeyPressed(MONA_KEY_A))
+    if (input.IsKeyPressed(MONA_KEY_A) || input.IsKeyPressed(MONA_KEY_LEFT) 
+        || input.IsGamepadButtonPressed(MONA_JOYSTICK_1, MONA_GAMEPAD_BUTTON_DPAD_LEFT)
+        || input.GetGamepadAxisValue(MONA_JOYSTICK_1, MONA_GAMEPAD_AXIS_LEFT_X) < -0.25f)
     {
         m_transform->Translate(glm::vec3(-m_paddleVelocity * timeStep, 0.0f, 0.0f));
     }
-    else if (input.IsKeyPressed(MONA_KEY_D))
+    else if (input.IsKeyPressed(MONA_KEY_D) || input.IsKeyPressed(MONA_KEY_RIGHT) 
+        || input.IsGamepadButtonPressed(MONA_JOYSTICK_1, MONA_GAMEPAD_BUTTON_DPAD_RIGHT)
+        || input.GetGamepadAxisValue(MONA_JOYSTICK_1, MONA_GAMEPAD_AXIS_LEFT_X) > 0.25f)
     {
         m_transform->Translate(glm::vec3(m_paddleVelocity * timeStep, 0.0f, 0.0f));
     }
 
-    if (input.IsKeyPressed(MONA_KEY_ESCAPE)) {
+    if (input.IsKeyPressed(MONA_KEY_ESCAPE) || input.IsGamepadButtonPressed(MONA_JOYSTICK_1, MONA_GAMEPAD_BUTTON_START)) {
         exit(EXIT_SUCCESS);
     }
 
