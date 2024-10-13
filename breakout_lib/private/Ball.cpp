@@ -1,6 +1,5 @@
 #include "Ball.hpp"
 
-
 Ball::Ball(Mona::TransformHandle transform) : m_transform(transform) {}
 
 Ball::~Ball() = default;
@@ -19,24 +18,20 @@ void Ball::UserStartUp(Mona::World& world) noexcept {
     auto ballMaterial = std::static_pointer_cast<Mona::DiffuseFlatMaterial>(world.CreateMaterial(Mona::MaterialType::DiffuseFlat));
     ballMaterial->SetDiffuseColor(glm::vec3(0.75f, 0.3f, 0.3f));
     world.AddComponent<Mona::StaticMeshComponent>(ball, meshManager.LoadMesh(Mona::Mesh::PrimitiveType::Sphere), ballMaterial);
-
     // Vector velocidad de la bola
     m_ballVelocity = glm::vec3(0.0f, 0.0f, 0.0f);
 }
-
 // Reaccionar a la colisión de la bola
 void Ball::OnCollisionBall(Mona::World& world, glm::vec3 collision_pos, glm::vec3 other_normal) {
     world.PlayAudioClip3D(m_ballBounceSound, m_ballTransform->GetLocalTranslation(), 0.3f);
     // m_ballTransform->SetTranslation(collision_pos + other_normal * m_ballRadius);
     m_ballVelocity = glm::reflect(m_ballVelocity, other_normal);
 }
-
 // Revisa la colisión con el paddle
 void Ball::checkPaddleCollision(Mona::World& world, Mona::TransformHandle paddleTransform) {
     if (time_since_last_collision < 1.0f) { // Evitar interacciones múltiples en la misma colisión
         return;
     }
-
     auto paddlePos = paddleTransform->GetLocalTranslation();
     auto paddleScale = paddleTransform->GetLocalScale();
     auto ballPos = m_ballTransform->GetLocalTranslation();
@@ -54,38 +49,28 @@ void Ball::checkPaddleCollision(Mona::World& world, Mona::TransformHandle paddle
     float closestPoint_x = glm::clamp(ballPos.x, paddlePos.x - paddleScale.x, paddlePos.x + paddleScale.x);
     float closestPoint_y = glm::clamp(ballPos.y, paddlePos.y - paddleScale.y, paddlePos.y + paddleScale.y);
     float closestPoint_z = glm::clamp(ballPos.z, paddlePos.z - paddleScale.z, paddlePos.z + paddleScale.z);
-
     float distance = glm::distance(glm::vec3(closestPoint_x, closestPoint_y, closestPoint_z), glm::vec3(ballPos.x, ballPos.y, ballPos.z));
-
     if (distance > m_ballRadius) {
         return;
     }
-
     // Si el punto más cercano está dentro de la bola, entonces la bola colisionó con el paddle, rebotar con dirección según la posición de la colisión
     time_since_last_collision = 0.0f; // Reiniciar el tiempo desde la última colisión
     glm::vec3 new_direction = glm::normalize(glm::vec3((closestPoint_x - paddlePos.x)*5, -m_ballVelocity.y, 0.0f));
     m_ballVelocity = new_direction * 15.0f;
 }
-	
-
 void Ball::UserUpdate(Mona::World& world, float timeStep) noexcept {
     auto& input = world.GetInput();
-
     // Lanzar la bola para empezar el juego
     if (input.IsMouseButtonPressed(MONA_MOUSE_BUTTON_1) && m_ballVelocity == glm::vec3(0.0f, 0.0f, 0.0f)) {
         m_ballVelocity = glm::vec3(0.0f, 15.0f, 0.0f);
-        
     }
-
     // Actualizar la posición de la bola
     m_ballTransform->SetTranslation(m_ballTransform->GetLocalTranslation() + m_ballVelocity * timeStep);
-
     // Colisiones con el paddle
     checkPaddleCollision(world, m_transform);
     if (time_since_last_collision < 2.0f) {
         time_since_last_collision += timeStep;
     }
-
     // Colisiones con las paredes
     if (m_ballTransform->GetLocalTranslation().x < -17.0f) {
         OnCollisionBall(world, glm::vec3(-17.0f, m_ballTransform->GetLocalTranslation().y, m_ballTransform->GetLocalTranslation().z), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -99,13 +84,11 @@ void Ball::UserUpdate(Mona::World& world, float timeStep) noexcept {
     else if (m_ballTransform->GetLocalTranslation().y > 25.0f) {
         OnCollisionBall(world, glm::vec3(m_ballTransform->GetLocalTranslation().x, 25.0f, m_ballTransform->GetLocalTranslation().z), glm::vec3(0.0f, -1.0f, 0.0f));
     }
-
 }
-
 float Ball::getBallRadius() const noexcept {
     return m_ballRadius;
 }
-
 Mona::TransformHandle Ball::GetTransform() const noexcept {
     return m_ballTransform;
 }
+

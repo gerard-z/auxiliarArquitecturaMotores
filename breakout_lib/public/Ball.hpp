@@ -29,3 +29,4 @@ private:
 	float m_ballRadius;
 	float time_since_last_collision = 0.0f; // tiempo desde la última colisión con el paddle
 };
+
