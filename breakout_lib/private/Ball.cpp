@@ -6,7 +6,8 @@ Ball::~Ball() = default;
 
 void Ball::UserStartUp(Mona::World& world) noexcept {
     auto& audioClipManager = Mona::AudioClipManager::GetInstance();
-    m_ballBounceSound = audioClipManager.LoadAudioClip(Mona::SourceDirectoryData::SourcePath("audio/ballBounce.wav"));
+    Mona::Config& config = Mona::Config::GetInstance();
+    m_ballBounceSound = audioClipManager.LoadAudioClip(config.getPathOfApplicationAsset("audio/ballBounce.wav"));
     auto& meshManager = Mona::MeshManager::GetInstance();
     // Crear la bola, su material y su forma.
     auto ball = world.CreateGameObject<Mona::GameObject>();

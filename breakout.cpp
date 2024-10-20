@@ -11,15 +11,14 @@ void CreateBasicCameraWithMusicAndLight(Mona::World& world)
 	world.SetMainCamera(world.AddComponent<Mona::CameraComponent>(camera));
 	world.SetAudioListenerTransform(transform);
 	auto& audioClipManager = Mona::AudioClipManager::GetInstance();
-	Mona::SourceDirectoryData::SetSourceDirectory("C:/Proyectos/cpp/MonaEngineProject/assets/");
-	auto audioClipPtr = audioClipManager.LoadAudioClip(Mona::SourceDirectoryData::SourcePath("audio/mewmew.wav"));
+	Mona::Config& config = Mona::Config::GetInstance();
+	auto audioClipPtr = audioClipManager.LoadAudioClip(config.getPathOfApplicationAsset("audio/mewmew.wav"));
 	auto audioSource = world.AddComponent<Mona::AudioSourceComponent>(camera, audioClipPtr);
 	audioSource->SetIsLooping(true);
 	audioSource->SetVolume(0.3f);
 	audioSource->Play();
 
 	world.AddComponent<Mona::DirectionalLightComponent>(camera, glm::vec3(1.0f));
-
 }
 
 void CreateWall(Mona::World& world,
